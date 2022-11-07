@@ -2,5 +2,7 @@
   "name": "@nkalinov/mf-manifest-deployment-plugin",
   "version": "1.0.0",
   "main": "./ModuleFederationDeploymentPlugin.js",
-  "dependencies": {}
+  "peerDependencies": {
+    "webpack-sources": ">3"
+  }
 }
