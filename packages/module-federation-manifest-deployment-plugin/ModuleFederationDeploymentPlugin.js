@@ -3,10 +3,10 @@ const { RawSource } = require('webpack-sources');
 const createDynamicRemote = (
   name,
   {
-    defaultEntryName = 'remoteEntry.js',
     key = '__webpack_mf_deployment_manifest__',
     manifestPath = '/apps/manifest.json',
     fallbackOrigin = '',
+    fallbackEntryName = 'remoteEntry.js',
   } = {}
 ) =>
   `new Promise(async (resolve, reject) => {
@@ -29,7 +29,7 @@ const createDynamicRemote = (
       if (!path) throw new Error('Manifest did not provide a version for ${name}.');
     } catch (e) {
       // Fallback to latest folder, using default entry file name.
-      path = '${fallbackOrigin}/${name}/latest/${defaultEntryName}'
+      path = '${fallbackOrigin}/${name}/latest/${fallbackEntryName}'
     }
   }
 

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { createRoot } from 'react-dom/client';
-import App, { AppProps } from './App';
+import App from './App';
 import { IMFEAppConfig } from './types';
 
 export * from './types';
@@ -15,7 +15,9 @@ const createDefaultConfig = (appsConfig: IMFEAppConfig[]) =>
 
 export default (
   appsConfig: IMFEAppConfig[],
-  config: Pick<Partial<AppProps>, 'windowKey'> = {}
+  config: {
+    windowKey?: string;
+  } = {}
 ) => {
   const { windowKey = defaultKey } = config;
 
@@ -47,8 +49,15 @@ export default (
     <App
       appsConfig={appsConfig}
       overrideConfig={overrideConfig}
-      {...config}
-      windowKey={windowKey}
+      onItemChange={(app, e) => {
+        localStorage.setItem(
+          windowKey,
+          JSON.stringify({
+            ...overrideConfig,
+            [app.name]: e.currentTarget.value,
+          })
+        );
+      }}
     />
   );
 };

@@ -1,9 +1,6 @@
 {
   "name": "microfrontends",
   "private": true,
-  "repository": "https://github.com/nkalinov/microfrontends.git",
-  "author": "Nikola Kalinov <kozzleto@gmail.com>",
-  "license": "MIT",
   "workspaces": [
     "packages/*"
   ],

@@ -1,6 +1,17 @@
 {
   "name": "@nkalinov/mf-manifest-deployment-plugin",
-  "version": "1.0.0",
+  "version": "0.0.1",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nkalinov/microfrontends.git",
+    "directory": "packages/module-federation-manifest-deployment-plugin"
+  },
+  "author": {
+    "name": "Nikola Kalinov",
+    "email": "kozzleto@gmail.com",
+    "url": "https://www.linkedin.com/in/nkalinov/"
+  },
   "main": "./ModuleFederationDeploymentPlugin.js",
   "peerDependencies": {
     "webpack-sources": ">3"

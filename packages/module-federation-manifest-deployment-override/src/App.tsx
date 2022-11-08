@@ -5,26 +5,18 @@ import { useState } from 'react';
 export type AppProps = {
   appsConfig: IMFEAppConfig[];
   overrideConfig: { [key: string]: string };
-  windowKey: string;
+  onItemChange: (
+    app: IMFEAppConfig,
+    e: React.FormEvent<HTMLInputElement>
+  ) => void;
 };
 
 export default function App({
   appsConfig,
   overrideConfig,
-  windowKey,
+  onItemChange,
 }: AppProps) {
   const [showPopup, setShowPopup] = useState(false);
-
-  const onItemChange =
-    (app: IMFEAppConfig) => (e: React.FormEvent<HTMLInputElement>) => {
-      localStorage.setItem(
-        windowKey,
-        JSON.stringify({
-          ...overrideConfig,
-          [app.name]: e.currentTarget.value,
-        })
-      );
-    };
 
   return (
     <div style={{ position: 'fixed', zIndex: 9999, left: 5, bottom: 5 }}>
@@ -66,7 +58,7 @@ export default function App({
                   <input
                     style={{ display: 'block', width: '100%' }}
                     defaultValue={overrideConfig[app.name]}
-                    onChange={onItemChange(app)}
+                    onChange={e => onItemChange(app, e)}
                     onKeyDown={e => {
                       if (e.key === 'Enter') {
                         window.location.reload();
