@@ -1,6 +1,6 @@
 {
   "name": "@nkalinov/mf-manifest-deployment-override",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "files": [
     "dist/"
@@ -20,7 +20,8 @@
   "scripts": {
     "serve": "webpack serve",
     "start": "webpack watch --mode development",
-    "build": "NODE_ENV=production webpack build"
+    "build": "NODE_ENV=production webpack build",
+    "prepublishOnly": "yarn build"
   },
   "dependencies": {
     "react": "^18.2.0",
