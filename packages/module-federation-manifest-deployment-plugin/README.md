@@ -57,10 +57,13 @@ module.exports = {
 
 # How does it work
 
-1. Try to get the manifest definition from window[key].
+1. Get the manifest from window[key].
 2. If it doesn't exist then fetch from `new URL(__webpack_public_path__).origin + manifestPath`
+3. Get app url from manifest - window[key][appKey]
+    1. If app key doesn't exist, fallback to `${fallbackOrigin}/${name}/latest/${fallbackEntryName}`
+4. Load remote container
+    1. If loading failed, fallback to `'${fallbackOrigin}/${name}/latest/' + fileName`
 
-## Fallbacks
+# Updating the manifest file
 
-If the manifest file fails to load for some reason or if the app key doesn't exist in the manifest the plugin will
-try a few fallbacks.
+todo

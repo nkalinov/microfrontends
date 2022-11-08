@@ -2,6 +2,9 @@
   "name": "@nkalinov/mf-manifest-deployment-override",
   "version": "0.0.1",
   "license": "MIT",
+  "files": [
+    "dist/"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/nkalinov/microfrontends.git",
