@@ -6,6 +6,7 @@ import { IMFEAppConfig } from './types';
 export * from './types';
 
 const defaultKey = '__webpack_mf_deployment_manifest__';
+const containerId = 'mf-deployment-manifest-override';
 
 const createDefaultConfig = (appsConfig: IMFEAppConfig[]) =>
   appsConfig.reduce((acc: { [key: string]: string }, module) => {
@@ -40,10 +41,16 @@ export default (
   }
   Object.assign(window[windowKey as keyof typeof window], overrideConfig);
 
-  // Render
+  // Don't override previous instances.
+  // Assuming they will be higher level ones with more knowledge about the ecosystem and thus richer appsConfig.
+  if (document.querySelector(`#${containerId}`)) {
+    return;
+  }
+
   const containerEl = document.createElement('div');
-  containerEl.id = 'mf-manifest-deployment-override';
+  containerEl.id = containerId;
   document.body.appendChild(containerEl);
+
   const root = createRoot(containerEl);
   root.render(
     <App
