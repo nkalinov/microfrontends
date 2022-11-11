@@ -45,24 +45,25 @@ module.exports = {
 {
   defaultEntryName = 'remoteEntry.js',
   key = '__webpack_mf_deployment_manifest__',
-  manifestPath = '/apps/manifest.json',
-  fallbackOrigin = '',
+  manifestPath = '/manifest.json',
+  fallbackOrigin = '', // will inherit the public path origin
 }
 ```
 
 - `key` - The window key that will be used to store the manifest.
-- `manifestPath` - Relative path from the current origin to the manifest.json file.
-- `fallbackOrigin` - Origin that will be used for the fallback requests (defaults to current origin).
+- `manifestPath` - Relative path (with leading slash) from the current origin to the manifest.json file.
+- `fallbackOrigin` - Origin that will be used for the fallback requests (defaults to public path origin). Could be
+  absolute or relative path prefixed with / (in which case public path origin will be used).
 - `fallbackEntryName` - Remote entry filename that will be used for the fallback requests.
 
 # How does it work
 
 1. Get the manifest from window[key].
 2. If it doesn't exist then fetch from `new URL(__webpack_public_path__).origin + manifestPath`
-3. Get app url from manifest - window[key][appKey]
-    1. If app key doesn't exist, fallback to `${fallbackOrigin}/${name}/latest/${fallbackEntryName}`
+3. Get app url from manifest - window[key][appkey]
+   1. If app key doesn't exist, fallback to `${fallbackOrigin}/${name}/latest/${fallbackEntryName}`
 4. Load remote container
-    1. If loading failed, fallback to `'${fallbackOrigin}/${name}/latest/' + fileName`
+   1. If loading failed, fallback to `'${fallbackOrigin}/${name}/latest/' + fileName`
 
 # Updating the manifest file
 

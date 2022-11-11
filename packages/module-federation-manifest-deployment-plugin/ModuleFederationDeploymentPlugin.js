@@ -4,7 +4,7 @@ const createDynamicRemote = (
   name,
   {
     key = '__webpack_mf_deployment_manifest__',
-    manifestPath = '/apps/manifest.json',
+    manifestPath = '/manifest.json',
     fallbackOrigin = '',
     fallbackEntryName = 'remoteEntry.js',
   } = {}
@@ -14,6 +14,11 @@ const createDynamicRemote = (
   // Base API origin starts from the public path of the current chunk.
   const publicPath = __webpack_require__.p;
   const baseOrigin = new URL(publicPath).origin;
+  
+  // Fallback origin.
+  // Can be either an absolute or relative URL. If relative, it will be based on baseOrigin.
+  const fallbackIsAbsolute = '${fallbackOrigin}'.startsWith('http');
+  const fallbackOrigin = fallbackIsAbsolute ? '${fallbackOrigin}' : baseOrigin + '${fallbackOrigin}';
 
   const onManifestLoaded = () => document.dispatchEvent(new CustomEvent('mf-manifest-loaded'));
   const fetchManifest = () => window.fetch_manifest || (window.fetch_manifest = fetch(baseOrigin + '${manifestPath}'));
@@ -30,7 +35,7 @@ const createDynamicRemote = (
       if (!path) throw new Error('Manifest did not provide a version for ${name}.');
     } catch (e) {
       // Fallback to latest folder, using default entry file name.
-      path = ('${fallbackOrigin}' || baseOrigin) + '/${name}/latest/${fallbackEntryName}';
+      path = fallbackOrigin + '/${name}/latest/${fallbackEntryName}';
       
       if (!window['${key}']) window['${key}'] = {};
       window['${key}']['${name}'] = path;
@@ -79,7 +84,7 @@ const createDynamicRemote = (
       const fileName = pathSplit[pathSplit.length - 1];
       
       __webpack_require__.l(
-        ('${fallbackOrigin}' || baseOrigin) + '/${name}/latest/' + fileName,
+        fallbackOrigin + '/${name}/latest/' + fileName,
         event => {
           if (event?.type === 'load' && window['${name}']) {
             // the injected script has loaded and is available on window
@@ -124,7 +129,6 @@ class ModuleFederationDeploymentPlugin {
         compilation.hooks.afterCodeGeneration.tap(
           ModuleFederationDeploymentPlugin.name,
           function () {
-            // console.log('compilation.hooks.afterCodeGeneration');
             scriptExternalModules.map(module => {
               const appName = module.request;
               const sourceMap =
