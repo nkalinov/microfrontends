@@ -3,3 +3,5 @@ export type IMFEAppConfig = {
   fileName: string;
   port: number;
 };
+
+export type IMFEAppsOverrideConfig = { [key: string]: string };

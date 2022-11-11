@@ -15,7 +15,8 @@ const createDynamicRemote = (
   const publicPath = __webpack_require__.p;
   const baseOrigin = new URL(publicPath).origin;
 
-  const fetchManifest = () => window.fetch_manifest || (window.fetch_manifest = fetch(baseOrigin + '${manifestPath}').then(res => res.json()));
+  const onManifestLoaded = () => document.dispatchEvent(new CustomEvent('mf-manifest-loaded'));
+  const fetchManifest = () => window.fetch_manifest || (window.fetch_manifest = fetch(baseOrigin + '${manifestPath}'));
   const getPathFromWindow = () => window['${key}'] && window['${key}']['${name}'];
   
   let path = getPathFromWindow();
@@ -23,13 +24,18 @@ const createDynamicRemote = (
   // Fetch from manifest if local entry doesn't exist.
   if (!path) {
     try {
-      window['${key}'] = await fetchManifest();
+      window['${key}'] = await fetchManifest().then(res => res.json());
       path = getPathFromWindow();
 
       if (!path) throw new Error('Manifest did not provide a version for ${name}.');
     } catch (e) {
       // Fallback to latest folder, using default entry file name.
-      path = '${fallbackOrigin}/${name}/latest/${fallbackEntryName}'
+      path = ('${fallbackOrigin}' || baseOrigin) + '/${name}/latest/${fallbackEntryName}';
+      
+      if (!window['${key}']) window['${key}'] = {};
+      window['${key}']['${name}'] = path;
+    } finally {
+      onManifestLoaded();
     }
   }
 
@@ -40,7 +46,7 @@ const createDynamicRemote = (
   const proxy = {
     get: (request) => window['${name}'].get(request),
     init: (arg) => {
-      if(window['${name}'].__initialized) return;
+      if (window['${name}'].__initialized) return;
       window['${name}'].__initialized = true;
       return window['${name}'].init(arg)
     }
@@ -73,7 +79,7 @@ const createDynamicRemote = (
       const fileName = pathSplit[pathSplit.length - 1];
       
       __webpack_require__.l(
-        '${fallbackOrigin}/${name}/latest/' + fileName,
+        ('${fallbackOrigin}' || baseOrigin) + '/${name}/latest/' + fileName,
         event => {
           if (event?.type === 'load' && window['${name}']) {
             // the injected script has loaded and is available on window

@@ -1,76 +1,146 @@
 import * as React from 'react';
-import { IMFEAppConfig } from './types';
-import { useState } from 'react';
+import { IMFEAppConfig, IMFEAppsOverrideConfig } from './types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export type AppProps = {
   appsConfig: IMFEAppConfig[];
-  overrideConfig: { [key: string]: string };
-  onItemChange: (
-    app: IMFEAppConfig,
-    e: React.FormEvent<HTMLInputElement>
-  ) => void;
+  windowKey?: string;
 };
 
-export default function App({
-  appsConfig,
-  overrideConfig,
-  onItemChange,
-}: AppProps) {
+const defaultKey = '__webpack_mf_deployment_manifest__';
+
+const createLocalhostConfig = (appsConfig: IMFEAppConfig[]) =>
+  appsConfig.reduce((acc: IMFEAppsOverrideConfig, module) => {
+    acc[module.name] = `http://localhost:${module.port}/${module.fileName}`;
+    return acc;
+  }, {});
+
+export default function App({ appsConfig, windowKey = defaultKey }: AppProps) {
   const [showPopup, setShowPopup] = useState(false);
+  const [windowConfig, setWindowConfig] = useState<IMFEAppsOverrideConfig>(
+    window[windowKey as keyof typeof window]
+  );
+
+  useEffect(() => {
+    document.addEventListener('mf-manifest-loaded', () => {
+      setWindowConfig(window[windowKey as keyof typeof window]);
+    });
+  }, [setWindowConfig]);
+
+  const [overrideConfig, setOverrideConfig] = useState<IMFEAppsOverrideConfig>(
+    () => {
+      // Assign override config from localStorage
+      try {
+        return JSON.parse(localStorage.getItem(windowKey)) || {};
+      } catch (e) {
+        return {};
+      }
+    }
+  );
+
+  // Assign overrideConfig to window immediately.
+  // Should not be in an effect because we need it to execute immediately.
+  if (!window[windowKey as keyof typeof window]) {
+    // @ts-ignore
+    window[windowKey] = {};
+  }
+  Object.assign(window[windowKey as keyof typeof window], overrideConfig);
+
+  // Default to localhost config + actual window values
+  const mergedConfig = useMemo<IMFEAppsOverrideConfig>(
+    () => ({
+      ...createLocalhostConfig(appsConfig),
+      ...windowConfig,
+      ...overrideConfig,
+    }),
+    [windowConfig, overrideConfig]
+  );
+
+  const onItemChange = useCallback(
+    (app: IMFEAppConfig, e: React.FormEvent<HTMLInputElement>) => {
+      const nextOverrideConfig = {
+        ...overrideConfig,
+        [app.name]: e.currentTarget.value,
+      };
+      setOverrideConfig(nextOverrideConfig);
+    },
+    [mergedConfig]
+  );
+
+  useEffect(() => {
+    localStorage.setItem(windowKey, JSON.stringify(overrideConfig));
+  }, [overrideConfig]);
 
   return (
-    <div style={{ position: 'fixed', zIndex: 9999, left: 5, bottom: 5 }}>
-      <div
+    <div
+      style={{
+        position: 'fixed',
+        zIndex: 9999,
+        left: 5,
+        bottom: 5,
+        display: 'flex',
+        alignItems: 'flex-end',
+      }}
+    >
+      <button
         style={{
-          position: 'relative',
-          display: 'flex',
-          alignItems: 'flex-end',
+          borderColor: '#fff',
+          borderRadius: '50px',
+          width: 50,
+          height: 50,
+        }}
+        onClick={() => {
+          setShowPopup(!showPopup);
         }}
       >
-        <button
+        MFE
+      </button>
+      {showPopup && (
+        <div
           style={{
-            background: 'none',
-            borderRadius: '50px',
-            width: 50,
-            height: 50,
-          }}
-          onClick={() => {
-            setShowPopup(!showPopup);
+            background: '#fff',
+            padding: 8,
+            marginLeft: 5,
+            borderRadius: 5,
+            width: 400,
+            position: 'relative',
+            boxShadow: '0 -5px 15px #ccc',
           }}
         >
-          MFE
-        </button>
-        {showPopup && (
-          <div
+          <a
+            href=""
             style={{
-              background: '#fff',
-              padding: 8,
-              marginLeft: 5,
-              border: '1px solid #999',
-              borderRadius: 5,
-              width: 400,
+              position: 'absolute',
+              top: 6,
+              right: 8,
+              fontSize: 10,
+            }}
+            onClick={() => {
+              localStorage.removeItem(windowKey);
             }}
           >
-            {appsConfig.map(app => (
-              <div key={app.name} style={{ marginBottom: 6 }}>
-                <label style={{ display: 'block' }}>
-                  <span style={{ fontSize: 12 }}>{app.name}</span>
-                  <input
-                    style={{ display: 'block', width: '100%' }}
-                    defaultValue={overrideConfig[app.name]}
-                    onChange={e => onItemChange(app, e)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') {
-                        window.location.reload();
-                      }
-                    }}
-                  />
-                </label>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+            Reset
+          </a>
+          {appsConfig.map(app => (
+            <div key={app.name} style={{ marginBottom: 6 }}>
+              <label style={{ display: 'block' }}>
+                <span style={{ fontSize: 12 }}>{app.name}</span>
+                <input
+                  style={{ display: 'block', width: '100%' }}
+                  defaultValue={mergedConfig[app.name]}
+                  onChange={e => onItemChange(app, e)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      onItemChange(app, e);
+                      window.location.reload();
+                    }
+                  }}
+                />
+              </label>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
