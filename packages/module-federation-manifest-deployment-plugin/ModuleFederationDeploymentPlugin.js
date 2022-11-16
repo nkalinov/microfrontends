@@ -20,9 +20,12 @@ const createDynamicRemote = (
   const fallbackIsAbsolute = '${fallbackOrigin}'.startsWith('http');
   const fallbackOrigin = fallbackIsAbsolute ? '${fallbackOrigin}' : baseOrigin + '${fallbackOrigin}';
 
-  const onManifestLoaded = () => document.dispatchEvent(new CustomEvent('mf-manifest-loaded'));
   const fetchManifest = () => window.fetch_manifest || (window.fetch_manifest = fetch(baseOrigin + '${manifestPath}'));
   const getPathFromWindow = () => window['${key}'] && window['${key}']['${name}'];
+  const setWindowPath = value => {
+    if (!window['${key}']) window['${key}'] = {};
+    window['${key}']['${name}'] = value;
+  };
   
   let path = getPathFromWindow();
   
@@ -36,17 +39,15 @@ const createDynamicRemote = (
     } catch (e) {
       // Fallback to latest folder, using default entry file name.
       path = fallbackOrigin + '/${name}/latest/${fallbackEntryName}';
-      
-      if (!window['${key}']) window['${key}'] = {};
-      window['${key}']['${name}'] = path;
     } finally {
-      onManifestLoaded();
+      // Emit the loaded value
+      setWindowPath(path);
     }
   }
 
   // Can be either an absolute or relative URL
   const remoteIsAbsolute = path.startsWith('http');
-  const remoteUrl = remoteIsAbsolute ? path : baseOrigin + path;
+  let remoteUrl = remoteIsAbsolute ? path : baseOrigin + path;
   
   const proxy = {
     get: (request) => window['${name}'].get(request),
@@ -82,9 +83,11 @@ const createDynamicRemote = (
       // Error, fallback to using fallbackOrigin as an origin and load latest
       const pathSplit = path.split('/');
       const fileName = pathSplit[pathSplit.length - 1];
+      remoteUrl = fallbackOrigin + '/${name}/latest/' + fileName;
+      setWindowPath(remoteUrl);
       
       __webpack_require__.l(
-        fallbackOrigin + '/${name}/latest/' + fileName,
+        remoteUrl,
         event => {
           if (event?.type === 'load' && window['${name}']) {
             // the injected script has loaded and is available on window

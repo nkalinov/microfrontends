@@ -1,71 +1,33 @@
 import * as React from 'react';
 import { IMFEAppConfig, IMFEAppsOverrideConfig } from './types';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export type AppProps = {
+  initialOverrideConfig: IMFEAppsOverrideConfig;
   appsConfig: IMFEAppConfig[];
-  windowKey?: string;
+  windowKey: string;
 };
 
-const defaultKey = '__webpack_mf_deployment_manifest__';
+const createAppLocalhostConfig = (module: IMFEAppConfig) =>
+  `http://localhost:${module.port}/${module.fileName}`;
 
-const createLocalhostConfig = (appsConfig: IMFEAppConfig[]) =>
-  appsConfig.reduce((acc: IMFEAppsOverrideConfig, module) => {
-    acc[module.name] = `http://localhost:${module.port}/${module.fileName}`;
-    return acc;
-  }, {});
-
-export default function App({ appsConfig, windowKey = defaultKey }: AppProps) {
+export default function App({
+  appsConfig,
+  initialOverrideConfig,
+  windowKey,
+}: AppProps) {
   const [showPopup, setShowPopup] = useState(false);
-  const [windowConfig, setWindowConfig] = useState<IMFEAppsOverrideConfig>(
-    window[windowKey as keyof typeof window]
-  );
-
-  useEffect(() => {
-    document.addEventListener('mf-manifest-loaded', () => {
-      setWindowConfig(window[windowKey as keyof typeof window]);
-    });
-  }, [setWindowConfig]);
-
   const [overrideConfig, setOverrideConfig] = useState<IMFEAppsOverrideConfig>(
-    () => {
-      // Assign override config from localStorage
-      try {
-        return JSON.parse(localStorage.getItem(windowKey)) || {};
-      } catch (e) {
-        return {};
-      }
-    }
+    initialOverrideConfig
   );
+  const windowConfig = window[windowKey as keyof typeof window];
 
-  // Assign overrideConfig to window immediately.
-  // Should not be in an effect because we need it to execute immediately.
-  if (!window[windowKey as keyof typeof window]) {
-    // @ts-ignore
-    window[windowKey] = {};
-  }
-  Object.assign(window[windowKey as keyof typeof window], overrideConfig);
-
-  // Default to localhost config + actual window values
-  const mergedConfig = useMemo<IMFEAppsOverrideConfig>(
-    () => ({
-      ...createLocalhostConfig(appsConfig),
-      ...windowConfig,
+  const onItemChange = (app: IMFEAppConfig, value: string) => {
+    setOverrideConfig(overrideConfig => ({
       ...overrideConfig,
-    }),
-    [windowConfig, overrideConfig]
-  );
-
-  const onItemChange = useCallback(
-    (app: IMFEAppConfig, e: React.FormEvent<HTMLInputElement>) => {
-      const nextOverrideConfig = {
-        ...overrideConfig,
-        [app.name]: e.currentTarget.value,
-      };
-      setOverrideConfig(nextOverrideConfig);
-    },
-    [mergedConfig]
-  );
+      [app.name]: value,
+    }));
+  };
 
   useEffect(() => {
     localStorage.setItem(windowKey, JSON.stringify(overrideConfig));
@@ -102,11 +64,37 @@ export default function App({ appsConfig, windowKey = defaultKey }: AppProps) {
             padding: 8,
             marginLeft: 5,
             borderRadius: 5,
-            width: 400,
+            width: 450,
             position: 'relative',
             boxShadow: '0 -5px 15px #ccc',
           }}
         >
+          {appsConfig.map(app => (
+            <div key={app.name} style={{ marginBottom: 6 }}>
+              <label style={{ display: 'block', position: 'relative' }}>
+                <span style={{ fontSize: 12 }}>{app.name}</span>
+                <input
+                  style={{ display: 'block', width: '100%' }}
+                  value={overrideConfig[app.name]}
+                  onChange={e => onItemChange(app, e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      window.location.reload();
+                    }
+                  }}
+                  placeholder={windowConfig[app.name]}
+                />
+                <span
+                  style={{ position: 'absolute', right: 6, bottom: 2 }}
+                  onClick={() => {
+                    onItemChange(app, createAppLocalhostConfig(app));
+                  }}
+                >
+                  ⛏
+                </span>
+              </label>
+            </div>
+          ))}
           <a
             href=""
             style={{
@@ -121,24 +109,6 @@ export default function App({ appsConfig, windowKey = defaultKey }: AppProps) {
           >
             Reset
           </a>
-          {appsConfig.map(app => (
-            <div key={app.name} style={{ marginBottom: 6 }}>
-              <label style={{ display: 'block' }}>
-                <span style={{ fontSize: 12 }}>{app.name}</span>
-                <input
-                  style={{ display: 'block', width: '100%' }}
-                  defaultValue={mergedConfig[app.name]}
-                  onChange={e => onItemChange(app, e)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      onItemChange(app, e);
-                      window.location.reload();
-                    }
-                  }}
-                />
-              </label>
-            </div>
-          ))}
         </div>
       )}
     </div>
