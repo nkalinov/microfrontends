@@ -12,28 +12,32 @@ const createDynamicRemote = (
   `new Promise(async (resolve, reject) => {
   
   // Base API origin starts from the public path of the current chunk.
-  const publicPath = __webpack_require__.p;
-  const baseOrigin = new URL(publicPath).origin;
+  var publicPath = __webpack_require__.p;
+  var baseOrigin = new URL(publicPath).origin;
   
   // Fallback origin.
   // Can be either an absolute or relative URL. If relative, it will be based on baseOrigin.
-  const fallbackIsAbsolute = '${fallbackOrigin}'.startsWith('http');
-  const fallbackOrigin = fallbackIsAbsolute ? '${fallbackOrigin}' : baseOrigin + '${fallbackOrigin}';
+  var fallbackIsAbsolute = '${fallbackOrigin}'.startsWith('http');
+  var fallbackOrigin = fallbackIsAbsolute ? '${fallbackOrigin}' : baseOrigin + '${fallbackOrigin}';
 
-  const fetchManifest = () => window.fetch_manifest || (window.fetch_manifest = fetch(baseOrigin + '${manifestPath}'));
-  const getPathFromWindow = () => window['${key}'] && window['${key}']['${name}'];
-  const setWindowPath = value => {
+  // Fetch manifest file from API. 
+  // Cached globally as multiple MFEs might be doing it concurrently.
+  var fetchManifest = () => window.fetch_manifest || (window.fetch_manifest = fetch(baseOrigin + '${manifestPath}'));
+  
+  // Helper to set the app path to the window var.
+  var setWindowPath = value => {
     if (!window['${key}']) window['${key}'] = {};
     window['${key}']['${name}'] = value;
   };
   
-  let path = getPathFromWindow();
+  // Initial path taken from the window.
+  var path = window['${key}'] && window['${key}']['${name}'];
   
-  // Fetch from manifest if local entry doesn't exist.
+  // Or get from manifest.
   if (!path) {
     try {
-      window['${key}'] = await fetchManifest().then(res => res.json());
-      path = getPathFromWindow();
+      var manifest = await fetchManifest().then(res => res.json());
+      path = manifest['${name}'];
 
       if (!path) throw new Error('Manifest did not provide a version for ${name}.');
     } catch (e) {
@@ -46,10 +50,10 @@ const createDynamicRemote = (
   }
 
   // Can be either an absolute or relative URL
-  const remoteIsAbsolute = path.startsWith('http');
-  let remoteUrl = remoteIsAbsolute ? path : baseOrigin + path;
+  var remoteIsAbsolute = path.startsWith('http');
+  var remoteUrl = remoteIsAbsolute ? path : baseOrigin + path;
   
-  const proxy = {
+  var proxy = {
     get: (request) => window['${name}'].get(request),
     init: (arg) => {
       if (window['${name}'].__initialized) return;
@@ -72,17 +76,17 @@ const createDynamicRemote = (
         return resolve(proxy)
       }
       
-      const rejectLoading = event => {
-        const realSrc = event?.target?.src;
-        const error = new Error();
+      var rejectLoading = event => {
+        var realSrc = event?.target?.src;
+        var error = new Error();
         error.message = 'Loading script failed. (missing: ' + realSrc + ')';
         error.name = 'ScriptExternalLoadError';
         reject(error);
       }
       
       // Error, fallback to using fallbackOrigin as an origin and load latest
-      const pathSplit = path.split('/');
-      const fileName = pathSplit[pathSplit.length - 1];
+      var pathSplit = path.split('/');
+      var fileName = pathSplit[pathSplit.length - 1];
       remoteUrl = fallbackOrigin + '/${name}/latest/' + fileName;
       setWindowPath(remoteUrl);
       
