@@ -5,11 +5,14 @@ const createDynamicRemote = (
   {
     key = '__webpack_mf_deployment_manifest__',
     manifestPath = '/manifest.json',
+    manifestImportsPath,
     fallbackOrigin = '',
     fallbackEntryName = 'remoteEntry.js',
   } = {}
 ) =>
   `new Promise(async (resolve, reject) => {
+  
+  var _get = (obj, path, defaultValue) => path.split(".").reduce((a, c) => (a && a[c] ? a[c] : (defaultValue || null)), obj);
   
   // Base API origin starts from the public path of the current chunk.
   var publicPath = __webpack_require__.p;
@@ -37,9 +40,14 @@ const createDynamicRemote = (
   if (!path) {
     try {
       var manifest = await fetchManifest().then(res => res.json());
-      path = manifest['${name}'];
+      path = _get(manifest, '${[manifestImportsPath, name]
+        .filter(Boolean)
+        .join('.')}');
 
-      if (!path) throw new Error('Manifest did not provide a version for ${name}.');
+      if (!path) {
+        console.warn('Manifest did not provide a version for ${name}.', manifest);
+        throw new Error('Manifest did not provide a version for ${name}.');
+      }
     } catch (e) {
       // Fallback to latest folder, using default entry file name.
       path = fallbackOrigin + '/${name}/latest/${fallbackEntryName}';
