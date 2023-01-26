@@ -25,7 +25,7 @@ const createDynamicRemote = (
 
   // Fetch manifest file from API. 
   // Cached globally as multiple MFEs might be doing it concurrently.
-  var fetchManifest = () => window.fetch_manifest || (window.fetch_manifest = fetch(baseOrigin + '${manifestPath}').then(res => res.json()));
+  var fetchManifest = async () => window.fetch_manifest || (window.fetch_manifest = await fetch(baseOrigin + '${manifestPath}').then(res => res.json()));
   
   // Helper to set the app path to the window var.
   var setWindowPath = value => {
