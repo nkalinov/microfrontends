@@ -9,12 +9,14 @@ const createDynamicRemote = (
     fallbackOrigin = '',
     fallbackEntryName = 'remoteEntry.js',
   } = {}
-) =>
-  `new Promise(async (resolve, reject) => {
+) => {
+  const manifestPromiseKey = key + 'promise__';
+
+  return `new Promise(async (resolve, reject) => {
   
   var _get = (obj, path, defaultValue) => path.split(".").reduce((a, c) => (a && a[c] ? a[c] : (defaultValue || null)), obj);
   
-  // Base API origin starts from the public path of the current chunk.
+  // Base API origin starts from the public path of the current chunk (remoteEntry.js).
   var publicPath = __webpack_require__.p;
   var baseOrigin = new URL(publicPath).origin;
   
@@ -25,7 +27,8 @@ const createDynamicRemote = (
 
   // Fetch manifest file from API. 
   // Cached globally as multiple MFEs might be doing it concurrently.
-  var fetchManifest = async () => window.fetch_manifest || (window.fetch_manifest = await fetch(baseOrigin + '${manifestPath}').then(res => res.json()));
+  var fetchManifest = () => window['${manifestPromiseKey}'] || 
+    (window['${manifestPromiseKey}'] = fetch(baseOrigin + '${manifestPath}').then(res => res.json()));
   
   // Helper to set the app path to the window var.
   var setWindowPath = value => {
@@ -115,6 +118,7 @@ const createDynamicRemote = (
   );
 })
 `;
+};
 
 class ModuleFederationDeploymentPlugin {
   constructor(options = {}) {
