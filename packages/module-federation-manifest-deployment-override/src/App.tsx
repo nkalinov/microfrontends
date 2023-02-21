@@ -1,15 +1,12 @@
 import * as React from 'react';
-import { IMFEAppConfig, IMFEAppsOverrideConfig } from './types';
+import { IConfig, IMFEAppConfig, IMFEAppsOverrideConfig } from './types';
 import { useEffect, useState } from 'react';
+import { createAppLocalhostConfig } from './utils';
 
-export type AppProps = {
+export type AppProps = IConfig & {
   initialOverrideConfig: IMFEAppsOverrideConfig;
   appsConfig: IMFEAppConfig[];
-  windowKey: string;
 };
-
-const createAppLocalhostConfig = (module: IMFEAppConfig) =>
-  `http://localhost:${module.port}/${module.fileName}`;
 
 export default function App({
   appsConfig,

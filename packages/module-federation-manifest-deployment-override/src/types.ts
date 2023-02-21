@@ -5,3 +5,8 @@ export type IMFEAppConfig = {
 };
 
 export type IMFEAppsOverrideConfig = { [key: string]: string };
+
+export type IConfig = {
+  windowKey?: string;
+  devMode?: boolean;
+};
